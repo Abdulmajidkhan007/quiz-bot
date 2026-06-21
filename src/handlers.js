@@ -65,7 +65,8 @@ function mainMenu(bot, chatId, name, userId) {
     [{ text: '📝 Test ishlash' }],
     [{ text: '👥 Guruhda test' }],
     [{ text: '📊 Statistikam' }],
-    [{ text: '➕ Savol qo\'shish' }, { text: '🆕 Yangi bo\'lim' }]
+    [{ text: '➕ Savol qo\'shish' }, { text: '🆕 Yangi bo\'lim' }],
+    [{ text: '📚 Yangi yo\'nalish' }]
   ];
   if (admin.isAdmin(userId)) rows.push([{ text: '🛠 Admin panel' }]);
   bot.sendMessage(chatId, `🎯 Asosiy menyu${name ? ', ' + name : ''}`, {
@@ -150,6 +151,11 @@ async function actNewSection(bot, chatId, userId) {
   if (!(await requireSubscription(bot, chatId, userId))) return;
   admin.startNewSub(bot, chatId);
 }
+async function actNewDirection(bot, chatId, userId) {
+  if (!ensureRegistered(bot, chatId, userId)) return;
+  if (!(await requireSubscription(bot, chatId, userId))) return;
+  admin.startNewDir(bot, chatId, userId);
+}
 
 // ---------------- Ulash ----------------
 function register(bot) {
@@ -163,6 +169,7 @@ function register(bot) {
   bot.onText(/^\/stats(?:@\w+)?$/, priv((msg) => actStats(bot, msg.chat.id, msg.from.id)));
   bot.onText(/^\/qush(?:@\w+)?$/, priv((msg) => actAddQuestion(bot, msg.chat.id, msg.from.id)));
   bot.onText(/^\/bolim(?:@\w+)?$/, priv((msg) => actNewSection(bot, msg.chat.id, msg.from.id)));
+  bot.onText(/^\/yunalish(?:@\w+)?$/, priv((msg) => actNewDirection(bot, msg.chat.id, msg.from.id)));
   bot.onText(/^\/admin(?:@\w+)?$/, priv((msg) => admin.openPanel(bot, msg.chat.id, msg.from.id)));
   bot.onText(/^\/adminpanel(?:@\w+)?$/, priv((msg) => admin.openPanel(bot, msg.chat.id, msg.from.id)));
 
@@ -175,6 +182,7 @@ function register(bot) {
     { command: 'stats', description: 'Statistikam' },
     { command: 'qush', description: "Savol qo'shish" },
     { command: 'bolim', description: "Yangi bo'lim yaratish" },
+    { command: 'yunalish', description: "Yangi yo'nalish qo'shish" },
     { command: 'adminpanel', description: 'Admin panel' },
     { command: 'id', description: 'Mening ID raqamim' }
   ]).catch(() => {});
@@ -227,6 +235,7 @@ function register(bot) {
     if (text === '📊 Statistikam') { actStats(bot, chatId, userId); return; }
     if (text === '➕ Savol qo\'shish') { await actAddQuestion(bot, chatId, userId); return; }
     if (text === '🆕 Yangi bo\'lim') { await actNewSection(bot, chatId, userId); return; }
+    if (text === '📚 Yangi yo\'nalish') { await actNewDirection(bot, chatId, userId); return; }
     if (text === '🛠 Admin panel') { admin.openPanel(bot, chatId, userId); return; }
   });
 

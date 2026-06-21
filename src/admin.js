@@ -5,7 +5,7 @@
 //  - Yangi bo'lim yaratish
 //  Admin ID'lar .env (ADMIN_IDS) dan olinadi.
 // ============================================================
-const { ADMIN_IDS, DIRECTIONS } = require('../config');
+const { ADMIN_IDS } = require('../config');
 const storage = require('./storage');
 const questions = require('./questions');
 
@@ -15,8 +15,9 @@ const aStates = {};
 function isAdmin(userId) {
   return ADMIN_IDS.includes(Number(userId));
 }
+function getAllDirs() { return storage.getDirections(); }
 function dirLabel(key) {
-  const d = DIRECTIONS.find(x => x.key === key);
+  const d = getAllDirs().find(x => x.key === key);
   return d ? d.label : key;
 }
 function slugify(s) {
@@ -71,6 +72,11 @@ function startNewSub(bot, chatId) {
   bot.sendMessage(chatId, "🆕 Qaysi yo'nalishga yangi bo'lim?", {
     reply_markup: { inline_keyboard: dirButtons('a:nsdir') }
   });
+}
+// Asosiy menyudan "🆕 Yangi yo'nalish" tugmasi uchun (hamma uchun ochiq)
+function startNewDir(bot, chatId, userId) {
+  aStates[userId] = { action: 'newdir', step: 'newdir_name' };
+  bot.sendMessage(chatId, "🆕 Yangi yo'nalish nomini yuboring (masalan: QA Testing, Data Science).\n\nBekor qilish uchun /bekor.");
 }
 function channelsView() {
   const chans = storage.getChannels();
@@ -146,7 +152,9 @@ function treeView() {
 }
 
 function dirButtons(prefix) {
-  const rows = DIRECTIONS.map(d => [{ text: d.label, callback_data: `${prefix}:${d.key}` }]);
+  const all = getAllDirs();
+  const rows = all.map(d => [{ text: `${d.emoji || '📚'} ${d.label}`, callback_data: `${prefix}:${d.key}` }]);
+  rows.push([{ text: '🆕 Yangi yo\'nalish qo\'shish', callback_data: 'a:newdir' }]);
   rows.push([{ text: '❌ Bekor qilish', callback_data: 'a:home' }]);
   return rows;
 }
@@ -159,7 +167,7 @@ function subButtons(dir, prefix, includeNew, backData) {
 }
 
 // Hamma uchun ochiq amallar (oddiy foydalanuvchi ham bajara oladi)
-const PUBLIC_ACTIONS = new Set(['add', 'adir', 'asub', 'newsub', 'nsdir', 'correct', 'cancel', 'tree', 'home']);;
+const PUBLIC_ACTIONS = new Set(['add', 'adir', 'asub', 'newsub', 'nsdir', 'newdir', 'correct', 'cancel', 'tree', 'home']);;
 
 // ---------------- Callbacklarni boshqarish ----------------
 // true qaytarsa — admin callback'i ishlandi
@@ -221,6 +229,11 @@ async function handleCallback(bot, query) {
 
   // ----- Yangi bo'lim -----
   if (action === 'newsub') { edit("🆕 Qaysi yo'nalishga yangi bo'lim?", dirButtons('a:nsdir')); return true; }
+  if (action === 'newdir') {
+    aStates[userId] = { action: 'newdir', step: 'newdir_name' };
+    edit("🆕 Yangi yo'nalish nomini yuboring (masalan: QA Testing, Data Science).\n\nBekor qilish: /bekor.", []);
+    return true;
+  }
   if (action === 'nsdir') {
     aStates[userId] = { action: 'newsub', dir: p[2], step: 'newsub_name' };
     edit(`🆕 "${dirLabel(p[2])}" ichida yangi bo'lim nomini yozing (masalan: Node.js):`, []);
@@ -294,7 +307,8 @@ function handleMessage(bot, msg) {
   const text = (msg.text || '').trim();
 
   if (text === '/bekor') { delete aStates[userId]; bot.sendMessage(chatId, "Bekor qilindi."); return true; }
-  if (text.startsWith('/')) return false; // boshqa buyruqlar admin kiritishi emas
+  // /skip — emoji bosqichida default ishlatish uchun, qolgan / komandalarini o'tkazib yuboramiz
+  if (text.startsWith('/') && text !== '/skip') return false;
   if (!text) { bot.sendMessage(chatId, "Iltimos matn yuboring (yoki /bekor)."); return true; }
 
   // Savol matni
@@ -331,6 +345,38 @@ function handleMessage(bot, msg) {
     return true;
   }
 
+  // Yangi yo'nalish — nom
+  if (st.step === 'newdir_name') {
+    const label = text.trim();
+    if (label.length < 2 || label.length > 40) {
+      bot.sendMessage(chatId, "⚠️ Nom 2 dan 40 belgigacha bo'lsin. Qaytadan yuboring yoki /bekor.");
+      return true;
+    }
+    st.dirLabel = label;
+    st.dirKey = slugify(label);
+    if (!st.dirKey) st.dirKey = 'dir' + Date.now();
+    st.step = 'newdir_emoji';
+    bot.sendMessage(chatId, `Yo'nalish nomi: "${label}"\n\nEmoji yuboring (masalan: 🎨 🔍 📱) yoki /skip bossangiz default 📚 ishlatamiz:`);
+    return true;
+  }
+  if (st.step === 'newdir_emoji') {
+    const emoji = (text === '/skip' || text.toLowerCase() === 'yoq' || text.toLowerCase() === "yo'q")
+      ? '📚'
+      : text.trim().slice(0, 4); // emoji odatda 1-2 char, ehtiyot uchun 4
+    const ok = storage.addDirection({ key: st.dirKey, label: st.dirLabel, emoji });
+    delete aStates[userId];
+    if (!ok) {
+      bot.sendMessage(chatId, "⚠️ Bunday kalit bilan yo'nalish allaqachon bor. Boshqa nom bilan urinib ko'ring.");
+      return true;
+    }
+    bot.sendMessage(chatId,
+      `✅ Yangi yo'nalish qo'shildi: ${emoji} ${st.dirLabel}\n\n` +
+      `Endi unga yangi bo'lim va savollar qo'shishingiz mumkin:\n` +
+      `• "🆕 Yangi bo'lim" tugmasi yoki /bolim\n` +
+      `• "➕ Savol qo'shish" tugmasi yoki /qush`);
+    return true;
+  }
+
   // Kanal qo'shish
   if (st.step === 'channel_add') {
     let ch = text;
@@ -349,4 +395,4 @@ function handleMessage(bot, msg) {
   return false;
 }
 
-module.exports = { isAdmin, openPanel, handleCallback, handleMessage, startAdd, startNewSub };
+module.exports = { isAdmin, openPanel, handleCallback, handleMessage, startAdd, startNewSub, startNewDir };

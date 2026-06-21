@@ -17,6 +17,8 @@ if (!TOKEN) {
 
 // Birinchi ishga tushganda majburiy kanallarni .env dan ko'chiramiz (keyin admin boshqaradi)
 storage.seedChannels(config.REQUIRED_CHANNELS);
+// Yo'nalishlarni config'dan seed qilamiz (keyin hamma yangi qo'sha oladi)
+storage.seedDirections(config.DIRECTIONS, config.DIRECTION_EMOJI);
 
 const bot = new TelegramBot(TOKEN, { polling: true });
 

@@ -6,7 +6,7 @@
 // ============================================================
 const fs = require('fs');
 const path = require('path');
-const { DIRECTION_EMOJI } = require('../config');
+const storage = require('./storage');
 
 // Runtime joyi (yoziladigan, doim saqlanadigan)
 const QUESTIONS_DIR = process.env.QUESTIONS_DIR
@@ -57,7 +57,7 @@ function loadAll() {
         const dk = data.direction || dir;
         const sk = data.key || file.replace('.json', '');
         if (!tree[dk]) {
-          tree[dk] = { label: data.directionLabel || dk, emoji: DIRECTION_EMOJI[dk] || '📚', subs: {} };
+          tree[dk] = { label: data.directionLabel || dk, emoji: storage.getDirectionEmoji(dk), subs: {} };
         }
         tree[dk].subs[sk] = { label: data.label || sk, questions: Array.isArray(data.questions) ? data.questions : [] };
       } catch (e) {

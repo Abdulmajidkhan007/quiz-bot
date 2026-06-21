@@ -17,12 +17,13 @@ IT yo'nalishlari bo'yicha Telegram test boti (Node.js, `node-telegram-bot-api`).
 | Test ishlash, guruhda test, statistika | ✅ | ✅ |
 | Savol qo'shish (umumiy bazaga) | ✅ | ✅ |
 | Yangi bo'lim yaratish | ✅ | ✅ |
+| **Yangi yo'nalish qo'shish** | ✅ | ✅ |
 | Yo'nalishlar va bo'limlar ro'yxati (ko'rish) | ✅ | ✅ |
 | Savol tahrirlash / o'chirish | ❌ | ✅ |
 | Majburiy kanallarni boshqarish | ❌ | ✅ |
 | Foydalanuvchilar va guruhlar ro'yxatini ko'rish | ❌ | ✅ |
 
-> Foydalanuvchi qo'shgan savolni boshqalar ham ishlata oladi (umumiy savol bazasi).
+> Foydalanuvchi qo'shgan savol/bo'lim/yo'nalishni hammasi ko'radi va ishlata oladi (umumiy baza).
 
 ---
 
@@ -89,6 +90,7 @@ Bot ishga tushgach Telegram'da `/start` bosing.
 | `/stats` | Statistikam |
 | `/qush` | Savol qo'shish (hamma uchun ochiq) |
 | `/bolim` | Yangi bo'lim yaratish (hamma uchun ochiq) |
+| `/yunalish` | Yangi yo'nalish qo'shish (hamma uchun ochiq) |
 | `/adminpanel` (yoki `/admin`) | Admin panel (faqat adminlar) |
 | `/id` | Mening Telegram ID raqamim |
 | `/bekor` | Joriy kiritish bosqichini bekor qilish |

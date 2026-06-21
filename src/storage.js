@@ -65,9 +65,34 @@ function seedChannels(seed) { if (!fs.existsSync(CHANNELS_FILE)) writeJson(CHANN
 function addChannel(ch) { const a = getChannels(); if (!a.includes(ch)) a.push(ch); writeJson(CHANNELS_FILE, a); return a; }
 function removeChannelAt(index) { const a = getChannels(); if (index >= 0 && index < a.length) a.splice(index, 1); writeJson(CHANNELS_FILE, a); return a; }
 
+// ---------- Yo'nalishlar (hamma qo'sha oladi) ----------
+const DIRECTIONS_FILE = path.join(DATA_DIR, 'directions.json');
+function getDirections() { return readJson(DIRECTIONS_FILE, []); }
+function seedDirections(seed, emojiMap) {
+  if (fs.existsSync(DIRECTIONS_FILE)) return;
+  const arr = (seed || []).map(d => ({
+    key: d.key,
+    label: d.label,
+    emoji: (emojiMap && emojiMap[d.key]) || d.emoji || '📚'
+  }));
+  writeJson(DIRECTIONS_FILE, arr);
+}
+function addDirection(dir) {
+  const all = getDirections();
+  if (all.some(d => d.key === dir.key)) return false; // mavjud
+  all.push({ key: dir.key, label: dir.label, emoji: dir.emoji || '📚' });
+  writeJson(DIRECTIONS_FILE, all);
+  return true;
+}
+function getDirectionEmoji(key) {
+  const d = getDirections().find(x => x.key === key);
+  return d ? d.emoji : '📚';
+}
+
 module.exports = {
   getUsers, getUser, upsertUser,
   getResults, addResult, getUserResults,
   getGroups, upsertGroup, removeGroup,
-  getChannels, seedChannels, addChannel, removeChannelAt
+  getChannels, seedChannels, addChannel, removeChannelAt,
+  getDirections, seedDirections, addDirection, getDirectionEmoji
 };
